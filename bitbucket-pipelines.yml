@@ -1,0 +1,24 @@
+pipelines:
+  branches:
+    master:
+      - step:
+          name: Build
+          image: node:22.0.0
+          script:
+            - npm install
+            - npm run build        
+          artifacts:
+            - dist/**
+      - step:
+          name: Deploy to Test
+          image: node:22.0.0
+          trigger: automatic
+          deployment: Test
+          script:
+            - mkdir -p ~/.ssh
+            - cat known_hosts >> ~/.ssh/known_hosts            
+            - apk update && apk add openssh rsync sshpass curl            
+            - sshpass -p $PASSTEST ssh $USERTEST@138.197.170.158 -p 2223 "cd ~/public_pruebas/; mkdir p-ahorracomunica.nexosmedia.com/dist"
+            - sshpass -p $PASSTEST ssh $USERTEST@138.197.170.158 -p 2223 "cd ~/public_pruebas/p-ahorracomunica.nexosmedia.com/; cp -r dist/ dist-old"
+            - sshpass -p $PASSTEST rsync -a -e "ssh -p 2223" --delete dist/ $USERTEST@138.197.170.158:/home/servici1/public_pruebas/p-ahorracomunica.nexosmedia.com/dist
+            
